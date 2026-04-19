@@ -22,10 +22,10 @@ SPORTS_MENU = InlineKeyboardMarkup([
 ])
 
 SPORT_INFO = {
-    "football": "⚽ *כדורגל*\n\nליגות פופולריות:\n• ליגת העל הישראלית\n• פרמייר ליג\n• לה ליגה\n• סריה A\n• בונדסליגה",
-    "basketball": "🏀 *כדורסל*\n\nליגות פופולריות:\n• ליגת Winner סאל\n• NBA\n• יורוליג",
-    "tennis": "🎾 *טניס*\n\nטורנירים גדולים:\n• אליפות אוסטרליה\n• רולאן גארוס\n• ווימבלדון\n• US Open",
-    "volleyball": "🏐 *כדורעף*\n\nליגות ותחרויות:\n• ליגת העל בישראל\n• ליגת האומות\n• אליפות אירופה",
+    "football": "⚽ כדורגל\n\nליגות פופולריות:\n• ליגת העל הישראלית\n• פרמייר ליג\n• לה ליגה\n• סריה A\n• בונדסליגה",
+    "basketball": "🏀 כדורסל\n\nליגות פופולריות:\n• ליגת Winner סאל\n• NBA\n• יורוליג",
+    "tennis": "🎾 טניס\n\nטורנירים גדולים:\n• אליפות אוסטרליה\n• רולאן גארוס\n• ווימבלדון\n• US Open",
+    "volleyball": "🏐 כדורעף\n\nליגות ותחרויות:\n• ליגת העל בישראל\n• ליגת האומות\n• אליפות אירופה",
 }
 
 
@@ -45,12 +45,11 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
 
     if query.data == "help":
         await query.edit_message_text(
-            "ℹ️ *עזרה*\n\n"
+            "ℹ️ עזרה\n\n"
             "פקודות זמינות:\n"
-            "/start \\- התחל והצג תפריט\n"
-            "/help \\- הצג עזרה\n\n"
-            "לחץ על ענף ספורט כדי לקבל מידע\\!",
-            parse_mode="MarkdownV2",
+            "/start - התחל והצג תפריט\n"
+            "/help - הצג עזרה\n\n"
+            "לחץ על ענף ספורט כדי לקבל מידע!",
             reply_markup=SPORTS_MENU,
         )
         return
@@ -59,7 +58,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     back_button = InlineKeyboardMarkup([
         [InlineKeyboardButton("🔙 חזרה לתפריט", callback_data="back")],
     ])
-    await query.edit_message_text(text, parse_mode="Markdown", reply_markup=back_button)
+    await query.edit_message_text(text, reply_markup=back_button)
 
 
 async def back_to_menu(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
