@@ -12,7 +12,25 @@ export interface WorkerInit {
   accountId: string
   phone: string
   pairingMethod: 'code' | 'qr'
+  /** Absolute path to this account's encrypted auth SQLite file. */
+  authDbFile: string
+  /** AES master key (base64) used to encrypt the auth store; supplied by main. */
+  masterKeyB64: string
 }
+
+/** First message main -> worker, carrying everything the session needs to boot. */
+export interface WorkerInitMessage {
+  kind: 'init'
+  init: WorkerInit
+}
+
+/** Subsequent main -> worker messages are commands. */
+export interface WorkerCommandMessage {
+  kind: 'command'
+  command: WorkerCommand
+}
+
+export type WorkerInbound = WorkerInitMessage | WorkerCommandMessage
 
 export type WorkerCommand =
   | { id: string; type: 'connect' }

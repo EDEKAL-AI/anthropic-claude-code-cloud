@@ -10,13 +10,27 @@ This file provides guidance for AI assistants (including Claude Code) working in
 
 ## Project Structure
 
-This is a newly initialized repository. As the project grows, update this section to reflect the directory layout:
+Electron + React + TypeScript desktop app for WhatsApp marketing automation via Baileys.
+See `README.md` for the full architecture and the ban-risk/ToS disclaimer.
 
 ```
-/                     # Repository root
-├── CLAUDE.md         # AI assistant guidance (this file)
-└── ...               # Project files (to be added)
+/
+├── CLAUDE.md                 # AI assistant guidance (this file)
+├── README.md                 # architecture, setup, milestone status
+├── electron.vite.config.ts   # main / preload / renderer / worker build
+├── electron-builder.yml      # packaging (asarUnpack worker + better-sqlite3)
+├── docker/                   # primary-device (emulator/ADB) runbook
+└── src/
+    ├── shared/               # types, IPC contract, worker protocol, pure logic (+ tests)
+    ├── main/                 # db (migrations/repositories), accounts (supervisor +
+    │                         #   worker bridge), scheduler, autoreply, emulator, security, ipc
+    ├── preload/              # contextBridge bridge (allowlisted channels)
+    ├── renderer/             # React UI (Accounts/Contacts/Templates/Campaigns/Inbox)
+    └── worker/               # Baileys session — one per account, runs in utilityProcess
 ```
+
+Key commands: `pnpm test`, `pnpm typecheck`, `pnpm build`, `pnpm dev` (run
+`pnpm rebuild:electron` before `pnpm dev`; see README for the native-module ABI note).
 
 ## Development Workflow
 
