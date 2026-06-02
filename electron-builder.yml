@@ -1,0 +1,31 @@
+appId: com.edekal.whatsapp-marketing
+productName: WhatsApp Marketing
+directories:
+  output: release
+  buildResources: resources
+files:
+  - out/**/*
+  - package.json
+# Native modules and the Baileys worker entry cannot be loaded from inside the asar
+# archive. Unpack them so utilityProcess.fork() and dlopen() resolve real file paths.
+asarUnpack:
+  - "**/node_modules/better-sqlite3/**"
+  - "out/main/worker.js"
+win:
+  target:
+    - nsis
+  artifactName: ${productName}-${version}-setup.${ext}
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+mac:
+  target:
+    - dmg
+  category: public.app-category.business
+  hardenedRuntime: true
+  # gatekeeperAssess: false and notarization are configured via env/afterSign in CI.
+linux:
+  target:
+    - AppImage
+    - deb
+  category: Office
