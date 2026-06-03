@@ -19,11 +19,18 @@ export class CampaignService {
     rateMaxMs: number
     dailyCap: number
   }): Campaign {
+    // Validate the schedule timestamp up front so we never persist a campaign whose job
+    // set can't be materialized (an invalid date would yield NaN).
+    let startAt = Date.now()
+    if (input.scheduledAt) {
+      const parsed = new Date(input.scheduledAt).getTime()
+      if (Number.isNaN(parsed)) throw new Error('invalid scheduledAt')
+      startAt = parsed
+    }
     const campaign = this.repos.campaigns.create(input)
     // Recurring campaigns are populated by the scheduler's cron job on each fire; one-shot
     // campaigns materialize their batch now (or at the scheduled start).
     if (!input.recurrence) {
-      const startAt = input.scheduledAt ? new Date(input.scheduledAt).getTime() : Date.now()
       this.materialize(campaign.id, startAt)
     }
     return campaign

@@ -32,6 +32,41 @@ export function normalizePhone(raw: string): string {
   return raw.replace(/[^\d]/g, '')
 }
 
+/**
+ * Parse a single CSV line into fields, honouring double-quoted fields (which may contain
+ * commas) and escaped quotes (""). Sufficient for contact imports where rows do not span
+ * multiple physical lines.
+ */
+export function parseCsvLine(line: string): string[] {
+  const fields: string[] = []
+  let field = ''
+  let inQuotes = false
+  for (let i = 0; i < line.length; i++) {
+    const ch = line[i]
+    if (inQuotes) {
+      if (ch === '"') {
+        if (line[i + 1] === '"') {
+          field += '"'
+          i++
+        } else {
+          inQuotes = false
+        }
+      } else {
+        field += ch
+      }
+    } else if (ch === '"') {
+      inQuotes = true
+    } else if (ch === ',') {
+      fields.push(field)
+      field = ''
+    } else {
+      field += ch
+    }
+  }
+  fields.push(field)
+  return fields
+}
+
 export class ContactsRepo {
   constructor(private db: Database) {}
 
@@ -59,6 +94,27 @@ export class ContactsRepo {
   upsert(input: { accountId: string | null; phone: string; name?: string | null; optIn?: boolean }): Contact {
     const phone = normalizePhone(input.phone)
     const now = new Date().toISOString()
+
+    // SQLite treats NULLs as distinct in UNIQUE(account_id, phone), so ON CONFLICT does not
+    // dedupe global (account_id IS NULL) contacts. Handle that case with an explicit
+    // find-then-update; account-scoped rows use the upsert path.
+    if (input.accountId === null) {
+      const existing = this.findByPhone(null, phone)
+      if (existing) {
+        if (input.name != null) {
+          this.db.prepare('UPDATE contacts SET name = ? WHERE id = ?').run(input.name, existing.id)
+        }
+        return this.findByPhone(null, phone)!
+      }
+      this.db
+        .prepare(
+          `INSERT INTO contacts (account_id, phone, name, opt_in, created_at)
+           VALUES (NULL, @phone, @name, @optIn, @now)`
+        )
+        .run({ phone, name: input.name ?? null, optIn: input.optIn ? 1 : 0, now })
+      return this.findByPhone(null, phone)!
+    }
+
     this.db
       .prepare(
         `INSERT INTO contacts (account_id, phone, name, opt_in, created_at)
@@ -80,7 +136,7 @@ export class ContactsRepo {
   importCsv(csv: string, accountId: string | null): number {
     const lines = csv.split(/\r?\n/).filter((l) => l.trim().length > 0)
     if (lines.length === 0) return 0
-    const header = lines[0].split(',').map((h) => h.trim().toLowerCase())
+    const header = parseCsvLine(lines[0]).map((h) => h.trim().toLowerCase())
     const phoneIdx = header.indexOf('phone')
     const nameIdx = header.indexOf('name')
     if (phoneIdx === -1) throw new Error('CSV must have a "phone" column')
@@ -88,7 +144,7 @@ export class ContactsRepo {
     const insert = this.db.transaction((rows: string[]) => {
       let count = 0
       for (const line of rows) {
-        const cols = line.split(',')
+        const cols = parseCsvLine(line)
         const phone = normalizePhone(cols[phoneIdx] ?? '')
         if (!phone) continue
         const name = nameIdx >= 0 ? (cols[nameIdx] ?? '').trim() || null : null

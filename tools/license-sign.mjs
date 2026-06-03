@@ -11,11 +11,25 @@ import { fileURLToPath } from 'node:url'
 const here = dirname(fileURLToPath(import.meta.url))
 
 const sub = process.argv[2]
-const days = Number(process.argv[3] ?? '0')
-const seats = Number(process.argv[4] ?? '0')
+const daysArg = process.argv[3]
+const seatsArg = process.argv[4]
 
-if (!sub) {
+if (!sub || daysArg == null || seatsArg == null) {
   console.error('usage: node tools/license-sign.mjs "Customer Name" <days> <seats>')
+  console.error('  <days> = 0 for perpetual, <seats> = 0 for unlimited')
+  process.exit(1)
+}
+
+const days = Number(daysArg)
+const seats = Number(seatsArg)
+
+// Reject mistyped/non-numeric args rather than silently minting a perpetual/unlimited key.
+if (!Number.isInteger(days) || days < 0) {
+  console.error('<days> must be a non-negative integer')
+  process.exit(1)
+}
+if (!Number.isInteger(seats) || seats < 0) {
+  console.error('<seats> must be a non-negative integer')
   process.exit(1)
 }
 

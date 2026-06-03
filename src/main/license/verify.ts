@@ -16,6 +16,21 @@ function b64urlDecode(s: string): Buffer {
   return Buffer.from(s.replace(/-/g, '+').replace(/_/g, '/'), 'base64')
 }
 
+function isLicensePayload(value: unknown): value is LicensePayload {
+  if (!value || typeof value !== 'object') return false
+  const p = value as Record<string, unknown>
+  return (
+    typeof p.sub === 'string' &&
+    Number.isInteger(p.seats) &&
+    (p.seats as number) >= 0 &&
+    typeof p.iat === 'number' &&
+    Number.isFinite(p.iat) &&
+    typeof p.exp === 'number' &&
+    Number.isFinite(p.exp) &&
+    (p.exp as number) >= 0
+  )
+}
+
 export function verifyLicense(token: string, publicKeyPem: string = LICENSE_PUBLIC_KEY): VerifyResult {
   const parts = token.trim().split('.')
   if (parts.length !== 2) return { valid: false, error: 'malformed license key' }
@@ -40,7 +55,9 @@ export function verifyLicense(token: string, publicKeyPem: string = LICENSE_PUBL
 
   let payload: LicensePayload
   try {
-    payload = JSON.parse(payloadBytes.toString('utf8')) as LicensePayload
+    const parsed: unknown = JSON.parse(payloadBytes.toString('utf8'))
+    if (!isLicensePayload(parsed)) return { valid: false, error: 'invalid payload' }
+    payload = parsed
   } catch {
     return { valid: false, error: 'invalid payload' }
   }

@@ -19,6 +19,8 @@ import { encrypt, decrypt } from './crypto'
 export interface SqliteAuthState {
   state: AuthenticationState
   saveCreds: () => void
+  /** Close the underlying SQLite connection. Call before reopening on reconnect. */
+  close: () => void
 }
 
 export function useSqliteAuthState(dbFile: string, key: Buffer): SqliteAuthState {
@@ -83,6 +85,7 @@ export function useSqliteAuthState(dbFile: string, key: Buffer): SqliteAuthState
 
   return {
     state,
-    saveCreds: () => writeData('creds', state.creds)
+    saveCreds: () => writeData('creds', state.creds),
+    close: () => db.close()
   }
 }

@@ -13,6 +13,8 @@ export function Activation({ onActivated }: { onActivated: () => void }) {
       const res = await api.license.activate(token.trim())
       if (res.ok) onActivated()
       else setError(res.error ?? 'Activation failed')
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Activation failed')
     } finally {
       setBusy(false)
     }

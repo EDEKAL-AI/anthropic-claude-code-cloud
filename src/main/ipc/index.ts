@@ -62,7 +62,10 @@ export function registerIpc(ctx: IpcContext): void {
     const result = await dialog.showOpenDialog({
       properties: ['openFile'],
       filters: [
-        { name: 'Media', extensions: ['jpg', 'jpeg', 'png', 'gif', 'webp', 'mp4', 'pdf', 'ogg', 'mp3', 'doc', 'docx'] }
+        {
+          name: 'Media',
+          extensions: ['jpg', 'jpeg', 'png', 'gif', 'webp', 'mp4', 'mov', 'webm', 'pdf', 'ogg', 'mp3', 'm4a', 'doc', 'docx']
+        }
       ]
     })
     if (result.canceled || result.filePaths.length === 0) return { path: null, mediaType: null }
@@ -73,8 +76,9 @@ export function registerIpc(ctx: IpcContext): void {
   // ---- Accounts ----
   handle('accounts:list', () => repos.accounts.list())
   handle('accounts:create', (a) => {
-    // Enforce the licensed seat count (0 = unlimited).
+    // Enforce the licensed seat count (null = not activated, 0 = unlimited).
     const seats = license.seats()
+    if (seats === null) throw new Error('No active license')
     if (seats > 0 && repos.accounts.list().length >= seats) {
       throw new Error(`License limit reached: ${seats} account seat(s)`)
     }
@@ -93,7 +97,9 @@ export function registerIpc(ctx: IpcContext): void {
     code: await supervisor.requestPairingCode(a.accountId)
   }))
   handle('accounts:delete', async (a) => {
-    await supervisor.disconnect(a.accountId).catch(() => {})
+    // Stop the worker first; only then remove the row. If teardown throws, surface it
+    // rather than orphaning a live worker with no management surface.
+    await supervisor.disconnect(a.accountId)
     repos.accounts.delete(a.accountId)
   })
 

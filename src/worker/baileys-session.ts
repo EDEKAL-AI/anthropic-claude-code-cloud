@@ -37,6 +37,7 @@ const MAX_BACKOFF_MS = 60_000
 export class BaileysSession {
   private sock: WASocket | null = null
   private saveCreds: () => void = () => {}
+  private closeAuthDb: (() => void) | null = null
   private reconnectAttempts = 0
   private cachedVersion: WAVersion | null = null
   private stopping = false
@@ -61,8 +62,11 @@ export class BaileysSession {
       this.cachedVersion = version
     }
 
-    const { state, saveCreds } = useSqliteAuthState(this.opts.authDbFile, this.opts.masterKey)
+    // Close any auth DB from a previous connection before reopening (reconnects reuse this).
+    this.closeAuthDb?.()
+    const { state, saveCreds, close } = useSqliteAuthState(this.opts.authDbFile, this.opts.masterKey)
     this.saveCreds = saveCreds
+    this.closeAuthDb = close
 
     this.setStatus('connecting')
 
@@ -251,6 +255,8 @@ export class BaileysSession {
       /* ignore */
     }
     this.sock = null
+    this.closeAuthDb?.()
+    this.closeAuthDb = null
   }
 
   async logout(): Promise<void> {

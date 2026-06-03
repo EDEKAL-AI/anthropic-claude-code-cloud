@@ -38,7 +38,8 @@ const MIGRATIONS: Migration[] = [
       opt_out INTEGER NOT NULL DEFAULT 0,
       notes TEXT,
       created_at TEXT NOT NULL,
-      UNIQUE (account_id, phone)
+      UNIQUE (account_id, phone),
+      FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE CASCADE
     );
 
     CREATE TABLE lists (

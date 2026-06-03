@@ -11,6 +11,7 @@ interface PairingInfo {
 interface AppState {
   accounts: Account[]
   pairing: Record<string, PairingInfo> // accountId -> qr/code
+  eventStreamInitialized: boolean
   refreshAccounts: () => Promise<void>
   initEventStream: () => void
 }
@@ -18,6 +19,7 @@ interface AppState {
 export const useStore = create<AppState>((set, get) => ({
   accounts: [],
   pairing: {},
+  eventStreamInitialized: false,
 
   refreshAccounts: async () => {
     const accounts = await api.accounts.list()
@@ -25,6 +27,10 @@ export const useStore = create<AppState>((set, get) => ({
   },
 
   initEventStream: () => {
+    // Idempotent: React.StrictMode mounts effects twice in dev, and this would otherwise
+    // attach a duplicate listener that double-counts pairing/status events.
+    if (get().eventStreamInitialized) return
+    set({ eventStreamInitialized: true })
     window.api.onWorkerEvent((event: WorkerEvent) => {
       switch (event.type) {
         case 'qr':

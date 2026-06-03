@@ -28,8 +28,10 @@ export function InboxPage() {
   }, [accountId, refresh])
 
   async function send(): Promise<void> {
-    if (!accountId || !toPhone.trim() || !text.trim()) return
-    const jid = `${toPhone.replace(/\D/g, '')}@s.whatsapp.net`
+    if (!accountId || !text.trim()) return
+    const normalizedPhone = toPhone.replace(/\D/g, '')
+    if (!normalizedPhone) return
+    const jid = `${normalizedPhone}@s.whatsapp.net`
     await api.messages.send({ accountId, jid, content: { text } })
     setText('')
     await refresh()

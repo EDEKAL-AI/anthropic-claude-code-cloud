@@ -18,6 +18,9 @@ export function encrypt(plain: Buffer, key: Buffer): Buffer {
 }
 
 export function decrypt(blob: Buffer, key: Buffer): Buffer {
+  if (blob.length < IV_LEN + TAG_LEN) {
+    throw new Error(`invalid encrypted blob: length ${blob.length} < ${IV_LEN + TAG_LEN}`)
+  }
   const iv = blob.subarray(0, IV_LEN)
   const tag = blob.subarray(IV_LEN, IV_LEN + TAG_LEN)
   const enc = blob.subarray(IV_LEN + TAG_LEN)

@@ -33,6 +33,10 @@ describe('ruleMatches', () => {
     expect(ruleMatches(rule({ matchType: 'regex', keyword: 'a'.repeat(300) }), 'a')).toBe(false)
   })
 
+  it('returns false for invalid regex syntax (exercises the catch path)', () => {
+    expect(ruleMatches(rule({ matchType: 'regex', keyword: '(' }), 'anything')).toBe(false)
+  })
+
   it('fallback always matches', () => {
     expect(ruleMatches(rule({ matchType: 'fallback' }), 'anything')).toBe(true)
   })

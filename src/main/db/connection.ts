@@ -39,6 +39,7 @@ export function openDb(file = ':memory:'): Database.Database {
   const conn = new Database(file)
   conn.pragma('journal_mode = WAL')
   conn.pragma('foreign_keys = ON')
+  conn.pragma('synchronous = NORMAL')
   runMigrations(conn)
   return conn
 }

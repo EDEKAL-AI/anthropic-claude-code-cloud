@@ -14,26 +14,33 @@ let cached: Buffer | null = null
 export function getMasterKey(settings: SettingsRepo): Buffer {
   if (cached) return cached
 
+  const encAvailable = safeStorage.isEncryptionAvailable()
+
+  // 1. Prefer an existing encrypted key.
   const stored = settings.get(SETTING_KEY)
-  if (stored && safeStorage.isEncryptionAvailable()) {
+  if (stored && encAvailable) {
     const keyB64 = safeStorage.decryptString(Buffer.from(stored, 'base64'))
     cached = Buffer.from(keyB64, 'base64')
     return cached
   }
 
-  // Fallback path for environments without an OS keyring (e.g. headless Linux). The key
-  // is stored unencrypted; this is clearly worse and surfaced via the setting name.
+  // 2. Fall back to a plaintext key from a prior keyring-less run. Load it regardless of
+  //    whether encryption is now available — rotating it here would orphan existing auth
+  //    blobs encrypted with it. If encryption has since become available, migrate it.
   const plain = settings.get(SETTING_PLAINTEXT_KEY)
-  if (plain && !safeStorage.isEncryptionAvailable()) {
+  if (plain) {
     cached = Buffer.from(plain, 'base64')
+    if (encAvailable) {
+      settings.set(SETTING_KEY, safeStorage.encryptString(plain).toString('base64'))
+      settings.set(SETTING_PLAINTEXT_KEY, '')
+    }
     return cached
   }
 
-  // Generate a fresh key.
+  // 3. No key yet: generate one and store it as securely as the platform allows.
   const key = randomBytes(32)
-  if (safeStorage.isEncryptionAvailable()) {
-    const enc = safeStorage.encryptString(key.toString('base64'))
-    settings.set(SETTING_KEY, enc.toString('base64'))
+  if (encAvailable) {
+    settings.set(SETTING_KEY, safeStorage.encryptString(key.toString('base64')).toString('base64'))
   } else {
     settings.set(SETTING_PLAINTEXT_KEY, key.toString('base64'))
   }

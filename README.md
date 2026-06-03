@@ -15,7 +15,7 @@ campaigns and bulk sending — built on **Electron + React + TypeScript** with
 
 ## Architecture
 
-```
+```text
 Electron main (Node)                         Renderer (React + TS)
  ├─ SQLite (better-sqlite3, WAL, single writer)   contacts / templates /
  ├─ Scheduler (node-cron → durable job queue)     campaigns / accounts / inbox
@@ -40,7 +40,7 @@ Electron main (Node)                         Renderer (React + TS)
 
 ## Project layout
 
-```
+```text
 src/
   shared/          types + IPC contract + worker protocol + pure logic (unit-tested)
   main/            db (migrations + repositories), accounts (supervisor + worker bridge),
@@ -107,10 +107,13 @@ node tools/license-sign.mjs "Customer Name" 365 5   # sign a 365-day, 5-seat lic
 
 ## Dependencies & security
 
-`@whiskeysockets/baileys` is pinned to **6.7.23** (the maintained `legacy` 6.x line). The
-higher-numbered `6.17.x` is affected by advisory GHSA-qvv5-jq5g-4cgg (message spoofing) — do
-**not** bump to it. Moving to `7.0.0-rc` (LID protocol) is the forward path when ready; the
-worker/auth boundary is designed to absorb that migration.
+`@whiskeysockets/baileys` is pinned to **6.7.23** (the maintained `legacy` 6.x line, which
+is `>= 6.7.22` and therefore patched). Advisory **GHSA-qvv5-jq5g-4cgg** (CVE-2026-48063,
+message/history-sync spoofing) lists affected ranges `< 6.7.22` and `< 7.0.0-rc12`, with
+fixes in **6.7.22** and **7.0.0-rc12**. The npm-published `6.17.x` line predates the 6.x fix
+and is flagged vulnerable — do **not** bump a `^` range into it. Moving to `7.0.0-rc` (LID
+protocol) is the forward path when ready; the worker/auth boundary is designed to absorb
+that migration.
 
 ## Primary device
 

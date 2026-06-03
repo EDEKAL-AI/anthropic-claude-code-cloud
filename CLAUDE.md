@@ -13,7 +13,7 @@ This file provides guidance for AI assistants (including Claude Code) working in
 Electron + React + TypeScript desktop app for WhatsApp marketing automation via Baileys.
 See `README.md` for the full architecture and the ban-risk/ToS disclaimer.
 
-```
+```text
 /
 ├── CLAUDE.md                 # AI assistant guidance (this file)
 ├── README.md                 # architecture, setup, milestone status

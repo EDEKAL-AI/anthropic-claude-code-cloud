@@ -2,12 +2,13 @@ import { describe, it, expect } from 'vitest'
 import { materializeJobs } from './schedule'
 import { isOptOutMessage } from './optout'
 
-// Deterministic rng for reproducible tests.
+// Deterministic rng for reproducible tests. Must stay in [0, 1) like Math.random — dividing
+// by 0x80000000 (not 0x7fffffff) guarantees the result never reaches 1.
 function seededRng(seed: number): () => number {
   let s = seed
   return () => {
     s = (s * 1103515245 + 12345) & 0x7fffffff
-    return s / 0x7fffffff
+    return s / 0x80000000
   }
 }
 
@@ -65,5 +66,16 @@ describe('isOptOutMessage', () => {
   it('ignores normal messages', () => {
     expect(isOptOutMessage('what is the price?')).toBe(false)
     expect(isOptOutMessage('')).toBe(false)
+  })
+
+  it('does not false-positive on words/phrases that merely contain a stop word', () => {
+    expect(isOptOutMessage('unstoppable')).toBe(false)
+    expect(isOptOutMessage('bus stop')).toBe(false)
+    expect(isOptOutMessage('baja california')).toBe(false)
+    expect(isOptOutMessage('StoPper')).toBe(false)
+  })
+
+  it('still matches a bare stop word regardless of case/punctuation', () => {
+    expect(isOptOutMessage('  STOP! ')).toBe(true)
   })
 })

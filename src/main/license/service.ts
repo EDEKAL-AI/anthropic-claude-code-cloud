@@ -29,10 +29,13 @@ export class LicenseService {
     return { ok: true }
   }
 
-  /** Allowed account seats; 0 = unlimited. Unactivated = 0 seats. */
-  seats(): number {
+  /**
+   * Allowed account seats: a non-negative number where 0 = unlimited. Returns null when
+   * not activated, so callers can distinguish "no license" from "unlimited license".
+   */
+  seats(): number | null {
     const status = this.status()
-    if (!status.activated || !status.payload) return 0
+    if (!status.activated || !status.payload) return null
     return status.payload.seats
   }
 }

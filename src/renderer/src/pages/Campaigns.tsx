@@ -47,6 +47,18 @@ export function CampaignsPage() {
       alert('Pick an account, template, list and name')
       return
     }
+    if (
+      !Number.isFinite(form.rateMinMs) ||
+      !Number.isFinite(form.rateMaxMs) ||
+      !Number.isFinite(form.dailyCap) ||
+      form.rateMinMs < 0 ||
+      form.rateMaxMs < 0 ||
+      form.dailyCap < 1 ||
+      form.rateMinMs > form.rateMaxMs
+    ) {
+      alert('Enter a valid delay range and daily cap')
+      return
+    }
     await api.campaigns.create({
       accountId: form.accountId,
       name: form.name.trim(),

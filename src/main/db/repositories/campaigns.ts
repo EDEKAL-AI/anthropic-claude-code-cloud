@@ -137,7 +137,8 @@ export class CampaignsRepo {
         "UPDATE campaign_jobs SET status = 'running', locked_at = ? WHERE id = ?"
       )
       for (const r of rows) upd.run(nowIso, r.id)
-      return rows.map(toJob)
+      // Reflect the post-update state so callers don't see the stale pre-claim snapshot.
+      return rows.map((r) => toJob({ ...r, status: 'running', locked_at: nowIso }))
     })
     return claim()
   }

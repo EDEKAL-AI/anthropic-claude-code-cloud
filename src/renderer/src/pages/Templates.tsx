@@ -3,6 +3,14 @@ import { api } from '../lib/api'
 import type { Template } from '@shared/models'
 import { renderTemplate } from '@shared/logic/template'
 
+function inferMediaTypeFromPath(path: string): string {
+  const ext = path.slice(path.lastIndexOf('.')).toLowerCase()
+  if (['.jpg', '.jpeg', '.png', '.gif', '.webp'].includes(ext)) return 'image'
+  if (['.mp4', '.mov', '.webm'].includes(ext)) return 'video'
+  if (['.ogg', '.mp3', '.m4a'].includes(ext)) return 'audio'
+  return 'document'
+}
+
 export function TemplatesPage() {
   const [templates, setTemplates] = useState<Template[]>([])
   const [name, setName] = useState('')
@@ -28,11 +36,13 @@ export function TemplatesPage() {
 
   async function create(): Promise<void> {
     if (!name.trim() || !body.trim()) return
+    const trimmedPath = mediaPath.trim()
     await api.templates.create({
       name: name.trim(),
       body,
-      mediaPath: mediaPath.trim() || undefined,
-      mediaType: mediaPath.trim() ? mediaType ?? 'document' : undefined
+      mediaPath: trimmedPath || undefined,
+      // Prefer the picker-provided type; otherwise infer from a manually entered path.
+      mediaType: trimmedPath ? mediaType ?? inferMediaTypeFromPath(trimmedPath) : undefined
     })
     setName('')
     setBody('Hi {{name}}, ')

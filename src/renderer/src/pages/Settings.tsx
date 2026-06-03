@@ -41,10 +41,20 @@ export function SettingsPage() {
             <label>
               {f.label} <span className="muted">— {f.hint}</span>
             </label>
-            <input
-              value={values[f.key] ?? ''}
-              onChange={(e) => setValues({ ...values, [f.key]: e.target.value })}
-            />
+            {f.key === 'simulateTyping' ? (
+              <select value={values[f.key] ?? 'true'} onChange={(e) => setValues({ ...values, [f.key]: e.target.value })}>
+                <option value="true">true</option>
+                <option value="false">false</option>
+              </select>
+            ) : (
+              <input
+                type="number"
+                min={0}
+                max={f.key === 'quietStartHour' || f.key === 'quietEndHour' ? 23 : undefined}
+                value={values[f.key] ?? ''}
+                onChange={(e) => setValues({ ...values, [f.key]: e.target.value })}
+              />
+            )}
           </div>
         ))}
         <button className="btn" onClick={() => void save()}>

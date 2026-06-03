@@ -23,8 +23,12 @@ export function AccountsPage() {
   const [pairingMethod, setPairingMethod] = useState<Account['pairingMethod']>('code')
 
   async function createAccount(): Promise<void> {
-    if (!phone.trim()) return
-    await api.accounts.create({ phone: phone.trim(), label: label.trim(), primaryKind, pairingMethod })
+    const normalizedPhone = phone.trim()
+    if (!/^\d{6,15}$/.test(normalizedPhone)) {
+      alert('Enter a valid phone number in E.164 format (digits only, e.g. 14155550100)')
+      return
+    }
+    await api.accounts.create({ phone: normalizedPhone, label: label.trim(), primaryKind, pairingMethod })
     setPhone('')
     setLabel('')
     await refreshAccounts()
