@@ -5,13 +5,16 @@ import { ipcMain } from 'electron'
 import type { Repositories } from '../db/repositories'
 import type { Supervisor } from '../accounts/supervisor'
 import type { CampaignService } from '../scheduler/campaign-service'
+import type { LicenseService } from '../license/service'
 import { renderTemplate } from '@shared/logic/template'
+import { SETTING_KEYS, SETTING_DEFAULTS, isPublicSettingKey } from '@shared/settings'
 import type { IpcChannel, IpcReq, IpcRes } from '@shared/ipc-contract'
 
 export interface IpcContext {
   repos: Repositories
   supervisor: Supervisor
   campaigns: CampaignService
+  license: LicenseService
 }
 
 // Typed wrapper so each handler's argument/return types are checked against the contract.
@@ -23,11 +26,36 @@ function handle<C extends IpcChannel>(
 }
 
 export function registerIpc(ctx: IpcContext): void {
-  const { repos, supervisor, campaigns } = ctx
+  const { repos, supervisor, campaigns, license } = ctx
+
+  // ---- License / activation ----
+  handle('license:status', () => license.status())
+  handle('license:activate', (a) => license.activate(a.token))
+
+  // ---- Global settings (UI-editable keys only; never leak secrets) ----
+  handle('settings:get', () => {
+    const all = repos.settings.all()
+    const out: Record<string, string> = { ...SETTING_DEFAULTS }
+    for (const key of SETTING_KEYS) {
+      if (all[key] != null) out[key] = all[key]
+    }
+    return out
+  })
+  handle('settings:set', (a) => {
+    if (!isPublicSettingKey(a.key)) throw new Error(`not a writable setting: ${a.key}`)
+    repos.settings.set(a.key, a.value)
+  })
 
   // ---- Accounts ----
   handle('accounts:list', () => repos.accounts.list())
-  handle('accounts:create', (a) => repos.accounts.create(a))
+  handle('accounts:create', (a) => {
+    // Enforce the licensed seat count (0 = unlimited).
+    const seats = license.seats()
+    if (seats > 0 && repos.accounts.list().length >= seats) {
+      throw new Error(`License limit reached: ${seats} account seat(s)`)
+    }
+    return repos.accounts.create(a)
+  })
   handle('accounts:connect', async (a) => {
     await supervisor.connect(a.accountId)
   })

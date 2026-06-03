@@ -84,6 +84,26 @@ The Baileys worker is emitted to `out/main/worker.js` and kept **outside** the a
 archive (`asarUnpack`) so `utilityProcess.fork()` can resolve a real path. Verify
 `utilityProcess` works in a *packaged* build, not just `pnpm dev`.
 
+## Licensing
+
+The app is gated by an offline license key (Ed25519-signed, verified against an embedded
+public key — no network needed). On first launch an activation screen accepts the key; seat
+limits cap how many WhatsApp accounts can be added.
+
+Vendor workflow (keep the private key secret, never commit it):
+
+```bash
+node tools/license-keygen.mjs                       # once: make a key pair; paste public key
+node tools/license-sign.mjs "Customer Name" 365 5   # sign a 365-day, 5-seat license
+```
+
+## Dependencies & security
+
+`@whiskeysockets/baileys` is pinned to **6.7.23** (the maintained `legacy` 6.x line). The
+higher-numbered `6.17.x` is affected by advisory GHSA-qvv5-jq5g-4cgg (message spoofing) — do
+**not** bump to it. Moving to `7.0.0-rc` (LID protocol) is the forward path when ready; the
+worker/auth boundary is designed to absorb that migration.
+
 ## Primary device
 
 See [`docker/attach-to-existing.md`](docker/attach-to-existing.md) for attaching to an

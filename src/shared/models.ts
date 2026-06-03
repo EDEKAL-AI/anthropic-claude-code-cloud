@@ -127,3 +127,14 @@ export interface AutoReplyRule {
   enabled: boolean
   priority: number
 }
+
+export interface LicenseInfo {
+  /** Customer name / identifier. */
+  sub: string
+  /** Expiry epoch ms; 0 means perpetual. */
+  exp: number
+  /** Allowed WhatsApp accounts (0 = unlimited). */
+  seats: number
+  /** Issued-at epoch ms. */
+  iat: number
+}

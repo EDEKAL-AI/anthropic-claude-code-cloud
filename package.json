@@ -30,11 +30,12 @@
     ]
   },
   "dependencies": {
-    "@whiskeysockets/baileys": "^6.17.0",
+    "@whiskeysockets/baileys": "6.7.23",
     "better-sqlite3": "^11.8.0",
     "link-preview-js": "^3.0.5",
     "node-cron": "^3.0.3",
     "pino": "^9.5.0",
+    "qrcode": "^1.5.4",
     "zustand": "^5.0.2"
   },
   "devDependencies": {
@@ -42,6 +43,7 @@
     "@types/better-sqlite3": "^7.6.12",
     "@types/node": "^22.10.0",
     "@types/node-cron": "^3.0.11",
+    "@types/qrcode": "^1.5.6",
     "@types/react": "^19.0.1",
     "@types/react-dom": "^19.0.1",
     "@vitejs/plugin-react": "^4.3.4",

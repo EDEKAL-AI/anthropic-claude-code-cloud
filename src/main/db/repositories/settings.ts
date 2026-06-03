@@ -18,4 +18,21 @@ export class SettingsRepo {
       )
       .run(key, value)
   }
+
+  all(): Record<string, string> {
+    const rows = this.db.prepare('SELECT key, value FROM settings').all() as {
+      key: string
+      value: string | null
+    }[]
+    const out: Record<string, string> = {}
+    for (const r of rows) if (r.value != null) out[r.key] = r.value
+    return out
+  }
+
+  getNumber(key: string, fallback: number): number {
+    const v = this.get(key)
+    if (v == null) return fallback
+    const n = Number(v)
+    return Number.isFinite(n) ? n : fallback
+  }
 }

@@ -8,6 +8,7 @@ import type {
   Campaign,
   Contact,
   ContactList,
+  LicenseInfo,
   MessageLog,
   Template
 } from './models'
@@ -16,6 +17,14 @@ import type { OutgoingContent, WorkerEvent } from './events'
 // ---- Request/response channels (renderer -> main via invoke/handle) ----
 
 export interface IpcRequests {
+  // License / activation
+  'license:status': { req: void; res: { activated: boolean; payload?: LicenseInfo } }
+  'license:activate': { req: { token: string }; res: { ok: boolean; error?: string } }
+
+  // Global settings
+  'settings:get': { req: void; res: Record<string, string> }
+  'settings:set': { req: { key: string; value: string }; res: void }
+
   // Accounts
   'accounts:list': { req: void; res: Account[] }
   'accounts:create': {
@@ -91,6 +100,10 @@ export interface IpcPushEvents {
 export type IpcPushChannel = keyof IpcPushEvents
 
 export const IPC_CHANNELS: IpcChannel[] = [
+  'license:status',
+  'license:activate',
+  'settings:get',
+  'settings:set',
   'accounts:list',
   'accounts:create',
   'accounts:connect',

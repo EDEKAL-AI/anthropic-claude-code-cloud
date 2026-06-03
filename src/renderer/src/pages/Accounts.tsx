@@ -1,7 +1,16 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import QRCode from 'qrcode'
 import { useStore } from '../store'
 import { api } from '../lib/api'
 import type { Account } from '@shared/models'
+
+function QrImage({ value }: { value: string }) {
+  const [dataUrl, setDataUrl] = useState('')
+  useEffect(() => {
+    void QRCode.toDataURL(value, { margin: 1, width: 180 }).then(setDataUrl).catch(() => setDataUrl(''))
+  }, [value])
+  return dataUrl ? <img src={dataUrl} width={180} height={180} alt="WhatsApp pairing QR" /> : <span className="muted">rendering QR…</span>
+}
 
 export function AccountsPage() {
   const accounts = useStore((s) => s.accounts)
@@ -98,7 +107,7 @@ export function AccountsPage() {
                 <td>{a.dailySentCount}</td>
                 <td>
                   {pair?.code && <div className="pairing-code">{pair.code}</div>}
-                  {pair?.qr && <div className="muted">QR ready — scan in WhatsApp</div>}
+                  {pair?.qr && <QrImage value={pair.qr} />}
                 </td>
                 <td>
                   <div className="row">

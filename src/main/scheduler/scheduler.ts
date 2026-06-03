@@ -16,6 +16,7 @@ const LEASE_MS = 5 * 60_000
 
 export class Scheduler {
   private task: ScheduledTask | null = null
+  private warmupTask: ScheduledTask | null = null
   private ticking = false
 
   constructor(
@@ -29,11 +30,24 @@ export class Scheduler {
     this.task = cron.schedule(TICK_CRON, () => {
       void this.tick()
     })
+    // Daily warmup ramp at 03:00 local: advance every linked account one step.
+    this.warmupTask = cron.schedule('0 3 * * *', () => {
+      this.repos.accounts.advanceWarmupForLinked()
+    })
   }
 
   stop(): void {
     this.task?.stop()
+    this.warmupTask?.stop()
     this.task = null
+    this.warmupTask = null
+  }
+
+  private quietHours(): { startHour: number; endHour: number } {
+    return {
+      startHour: this.repos.settings.getNumber('quietStartHour', 2),
+      endHour: this.repos.settings.getNumber('quietEndHour', 6)
+    }
   }
 
   private async tick(): Promise<void> {
@@ -64,7 +78,8 @@ export class Scheduler {
         dailySentCount: this.repos.accounts.get(accountId)?.dailySentCount ?? 0,
         warmupStage: account.warmupStage,
         campaignDailyCap: this.repos.campaigns.get(job.campaignId)?.dailyCap ?? 200,
-        localHour: new Date().getHours()
+        localHour: new Date().getHours(),
+        quietHours: this.quietHours()
       })
 
       if (!gate.allowed) {
@@ -82,7 +97,8 @@ export class Scheduler {
       try {
         const contact = this.repos.contacts.get(job.contactId)!
         const jid = `${contact.phone}@s.whatsapp.net`
-        const waMessageId = await this.supervisor.sendMessage(accountId, jid, content)
+        const simulateTyping = this.repos.settings.get('simulateTyping') !== 'false'
+        const waMessageId = await this.supervisor.sendMessage(accountId, jid, content, simulateTyping)
         this.repos.campaigns.markJob(job.id, 'sent', { waMessageId: waMessageId ?? undefined })
         this.repos.accounts.recordSend(accountId)
         this.repos.messages.log({

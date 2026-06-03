@@ -100,4 +100,15 @@ export class AccountsRepo {
   setWarmupStage(id: string, stage: number): void {
     this.db.prepare('UPDATE accounts SET warmup_stage = ? WHERE id = ?').run(stage, id)
   }
+
+  /** Advance the warmup ladder by one step (capped) for every linked account. Called daily. */
+  advanceWarmupForLinked(maxStage = 12): number {
+    const info = this.db
+      .prepare(
+        `UPDATE accounts SET warmup_stage = MIN(warmup_stage + 1, ?)
+         WHERE status = 'linked' AND warmup_stage < ?`
+      )
+      .run(maxStage, maxStage)
+    return info.changes
+  }
 }

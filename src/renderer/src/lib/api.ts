@@ -8,6 +8,14 @@ function call<C extends IpcChannel>(channel: C, arg: IpcReq<C>): Promise<IpcRes<
 }
 
 export const api = {
+  license: {
+    status: () => call('license:status', undefined),
+    activate: (token: string) => call('license:activate', { token })
+  },
+  settings: {
+    get: () => call('settings:get', undefined),
+    set: (key: string, value: string) => call('settings:set', { key, value })
+  },
   accounts: {
     list: () => call('accounts:list', undefined),
     create: (a: IpcReq<'accounts:create'>) => call('accounts:create', a),

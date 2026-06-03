@@ -8,6 +8,7 @@ import { Supervisor } from './accounts/supervisor'
 import { CampaignService } from './scheduler/campaign-service'
 import { Scheduler } from './scheduler/scheduler'
 import { AutoReplyEngine } from './autoreply/engine'
+import { LicenseService } from './license/service'
 import { registerIpc } from './ipc'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
@@ -62,6 +63,7 @@ function bootstrap(): void {
   const autoReply = new AutoReplyEngine(repos, (accountId, jid, content) =>
     supervisor!.sendMessage(accountId, jid, content)
   )
+  const license = new LicenseService(repos.settings)
   scheduler = new Scheduler(repos, supervisor)
 
   // Push live worker events to the renderer.
@@ -73,7 +75,7 @@ function bootstrap(): void {
     void autoReply.handle(msg)
   })
 
-  registerIpc({ repos, supervisor, campaigns })
+  registerIpc({ repos, supervisor, campaigns, license })
 
   // Restore sessions for previously-linked accounts, then start the send loop.
   supervisor.startAll()

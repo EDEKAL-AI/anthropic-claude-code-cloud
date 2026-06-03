@@ -10,3 +10,6 @@ release/
 coverage/
 *.tsbuildinfo
 .vite/
+
+# Vendor license signing key — must never be committed
+tools/*.pem
