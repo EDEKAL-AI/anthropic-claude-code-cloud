@@ -20,6 +20,7 @@ export function CampaignsPage() {
     templateId: 0,
     listId: 0,
     scheduledAt: '',
+    recurrence: '',
     rateMinMs: 8000,
     rateMaxMs: 25000,
     dailyCap: 200
@@ -52,7 +53,7 @@ export function CampaignsPage() {
       templateId: form.templateId,
       listId: form.listId,
       scheduledAt: form.scheduledAt ? new Date(form.scheduledAt).toISOString() : null,
-      recurrence: null,
+      recurrence: form.recurrence.trim() || null,
       rateMinMs: form.rateMinMs,
       rateMaxMs: form.rateMaxMs,
       dailyCap: form.dailyCap
@@ -109,6 +110,14 @@ export function CampaignsPage() {
           <div className="field">
             <label>Schedule (optional)</label>
             <input type="datetime-local" value={form.scheduledAt} onChange={(e) => setForm({ ...form, scheduledAt: e.target.value })} />
+          </div>
+          <div className="field">
+            <label>Recurring (cron, optional)</label>
+            <input
+              value={form.recurrence}
+              onChange={(e) => setForm({ ...form, recurrence: e.target.value })}
+              placeholder="0 10 * * 1"
+            />
           </div>
           <div className="field">
             <label>Delay min (ms)</label>

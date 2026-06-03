@@ -8,6 +8,7 @@ export function TemplatesPage() {
   const [name, setName] = useState('')
   const [body, setBody] = useState('Hi {{name}}, ')
   const [mediaPath, setMediaPath] = useState('')
+  const [mediaType, setMediaType] = useState<string | null>(null)
 
   async function refresh(): Promise<void> {
     setTemplates(await api.templates.list())
@@ -17,17 +18,26 @@ export function TemplatesPage() {
     void refresh()
   }, [])
 
+  async function browse(): Promise<void> {
+    const res = await api.dialog.pickMedia()
+    if (res.path) {
+      setMediaPath(res.path)
+      setMediaType(res.mediaType)
+    }
+  }
+
   async function create(): Promise<void> {
     if (!name.trim() || !body.trim()) return
     await api.templates.create({
       name: name.trim(),
       body,
       mediaPath: mediaPath.trim() || undefined,
-      mediaType: mediaPath.trim() ? 'image' : undefined
+      mediaType: mediaPath.trim() ? mediaType ?? 'document' : undefined
     })
     setName('')
     setBody('Hi {{name}}, ')
     setMediaPath('')
+    setMediaType(null)
     await refresh()
   }
 
@@ -46,8 +56,13 @@ export function TemplatesPage() {
           <textarea rows={4} value={body} onChange={(e) => setBody(e.target.value)} />
         </div>
         <div className="field">
-          <label>Media file path (optional, absolute path on disk)</label>
-          <input value={mediaPath} onChange={(e) => setMediaPath(e.target.value)} placeholder="/path/to/image.jpg" />
+          <label>Media (optional){mediaType ? ` — ${mediaType}` : ''}</label>
+          <div className="row">
+            <input style={{ flex: 1 }} value={mediaPath} onChange={(e) => setMediaPath(e.target.value)} placeholder="/path/to/image.jpg" />
+            <button className="btn secondary" onClick={() => void browse()}>
+              Browse…
+            </button>
+          </div>
         </div>
         <div className="muted">Preview: {renderTemplate(body, { name: 'Dana', phone: '14155550100' })}</div>
         <div style={{ marginTop: 10 }}>

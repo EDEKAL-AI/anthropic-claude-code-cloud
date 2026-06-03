@@ -64,7 +64,7 @@ function bootstrap(): void {
     supervisor!.sendMessage(accountId, jid, content)
   )
   const license = new LicenseService(repos.settings)
-  scheduler = new Scheduler(repos, supervisor)
+  scheduler = new Scheduler(repos, supervisor, campaigns)
 
   // Push live worker events to the renderer.
   supervisor.setPushHandler((event) => {
@@ -75,7 +75,7 @@ function bootstrap(): void {
     void autoReply.handle(msg)
   })
 
-  registerIpc({ repos, supervisor, campaigns, license })
+  registerIpc({ repos, supervisor, campaigns, license, scheduler })
 
   // Restore sessions for previously-linked accounts, then start the send loop.
   supervisor.startAll()

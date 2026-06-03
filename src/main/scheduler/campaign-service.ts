@@ -20,8 +20,12 @@ export class CampaignService {
     dailyCap: number
   }): Campaign {
     const campaign = this.repos.campaigns.create(input)
-    const startAt = input.scheduledAt ? new Date(input.scheduledAt).getTime() : Date.now()
-    this.materialize(campaign.id, startAt)
+    // Recurring campaigns are populated by the scheduler's cron job on each fire; one-shot
+    // campaigns materialize their batch now (or at the scheduled start).
+    if (!input.recurrence) {
+      const startAt = input.scheduledAt ? new Date(input.scheduledAt).getTime() : Date.now()
+      this.materialize(campaign.id, startAt)
+    }
     return campaign
   }
 

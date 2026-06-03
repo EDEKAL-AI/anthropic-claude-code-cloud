@@ -17,7 +17,6 @@
     "typecheck": "npm run typecheck:node && npm run typecheck:web",
     "test": "vitest run",
     "test:watch": "vitest",
-    "lint": "eslint . --ext .ts,.tsx",
     "rebuild:electron": "electron-rebuild -f -w better-sqlite3",
     "package": "electron-vite build && electron-builder"
   },

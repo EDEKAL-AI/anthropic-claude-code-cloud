@@ -9,6 +9,7 @@ import { InboxPage } from './pages/Inbox'
 import { DashboardPage } from './pages/Dashboard'
 import { SettingsPage } from './pages/Settings'
 import { Activation } from './pages/Activation'
+import { Compliance } from './pages/Compliance'
 import type { LicenseInfo } from '@shared/models'
 
 type Tab = 'dashboard' | 'accounts' | 'contacts' | 'templates' | 'campaigns' | 'inbox' | 'settings'
@@ -26,6 +27,7 @@ const TABS: { id: Tab; label: string }[] = [
 export function App() {
   const [tab, setTab] = useState<Tab>('dashboard')
   const [license, setLicense] = useState<{ activated: boolean; payload?: LicenseInfo } | null>(null)
+  const [accepted, setAccepted] = useState<boolean | null>(null)
   const initEventStream = useStore((s) => s.initEventStream)
   const refreshAccounts = useStore((s) => s.refreshAccounts)
 
@@ -33,16 +35,25 @@ export function App() {
     setLicense(await api.license.status())
   }
 
+  async function checkCompliance(): Promise<void> {
+    const settings = await api.settings.get()
+    setAccepted(!!settings.complianceAcceptedAt)
+  }
+
   useEffect(() => {
     void checkLicense()
   }, [])
 
   useEffect(() => {
-    if (license?.activated) {
+    if (license?.activated) void checkCompliance()
+  }, [license?.activated])
+
+  useEffect(() => {
+    if (license?.activated && accepted) {
       initEventStream()
       void refreshAccounts()
     }
-  }, [license?.activated, initEventStream, refreshAccounts])
+  }, [license?.activated, accepted, initEventStream, refreshAccounts])
 
   if (license === null) {
     return <div style={{ padding: 40 }} className="muted">Loading…</div>
@@ -50,6 +61,14 @@ export function App() {
 
   if (!license.activated) {
     return <Activation onActivated={() => void checkLicense()} />
+  }
+
+  if (accepted === null) {
+    return <div style={{ padding: 40 }} className="muted">Loading…</div>
+  }
+
+  if (!accepted) {
+    return <Compliance onAccepted={() => setAccepted(true)} />
   }
 
   return (

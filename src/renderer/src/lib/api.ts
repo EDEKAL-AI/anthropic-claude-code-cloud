@@ -16,6 +16,9 @@ export const api = {
     get: () => call('settings:get', undefined),
     set: (key: string, value: string) => call('settings:set', { key, value })
   },
+  dialog: {
+    pickMedia: () => call('dialog:pickMedia', undefined)
+  },
   accounts: {
     list: () => call('accounts:list', undefined),
     create: (a: IpcReq<'accounts:create'>) => call('accounts:create', a),

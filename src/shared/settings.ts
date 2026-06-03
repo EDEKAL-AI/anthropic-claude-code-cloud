@@ -8,7 +8,8 @@ export const SETTING_KEYS = [
   'defaultRateMinMs',
   'defaultRateMaxMs',
   'defaultDailyCap',
-  'simulateTyping'
+  'simulateTyping',
+  'complianceAcceptedAt'
 ] as const
 
 export type SettingKey = (typeof SETTING_KEYS)[number]
@@ -19,7 +20,8 @@ export const SETTING_DEFAULTS: Record<SettingKey, string> = {
   defaultRateMinMs: '8000',
   defaultRateMaxMs: '25000',
   defaultDailyCap: '200',
-  simulateTyping: 'true'
+  simulateTyping: 'true',
+  complianceAcceptedAt: ''
 }
 
 export function isPublicSettingKey(key: string): key is SettingKey {

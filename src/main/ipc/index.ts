@@ -1,10 +1,12 @@
 // Registers every renderer->main IPC handler against the typed IpcRequests contract.
 // Handlers are thin: they delegate to repositories, the supervisor, or services.
 
-import { ipcMain } from 'electron'
+import { ipcMain, dialog } from 'electron'
+import { extname } from 'node:path'
 import type { Repositories } from '../db/repositories'
 import type { Supervisor } from '../accounts/supervisor'
 import type { CampaignService } from '../scheduler/campaign-service'
+import type { Scheduler } from '../scheduler/scheduler'
 import type { LicenseService } from '../license/service'
 import { renderTemplate } from '@shared/logic/template'
 import { SETTING_KEYS, SETTING_DEFAULTS, isPublicSettingKey } from '@shared/settings'
@@ -14,7 +16,16 @@ export interface IpcContext {
   repos: Repositories
   supervisor: Supervisor
   campaigns: CampaignService
+  scheduler: Scheduler
   license: LicenseService
+}
+
+function inferMediaType(path: string): 'image' | 'video' | 'audio' | 'document' {
+  const ext = extname(path).toLowerCase()
+  if (['.jpg', '.jpeg', '.png', '.gif', '.webp'].includes(ext)) return 'image'
+  if (['.mp4', '.mov', '.webm'].includes(ext)) return 'video'
+  if (['.ogg', '.mp3', '.m4a'].includes(ext)) return 'audio'
+  return 'document'
 }
 
 // Typed wrapper so each handler's argument/return types are checked against the contract.
@@ -26,7 +37,7 @@ function handle<C extends IpcChannel>(
 }
 
 export function registerIpc(ctx: IpcContext): void {
-  const { repos, supervisor, campaigns, license } = ctx
+  const { repos, supervisor, campaigns, scheduler, license } = ctx
 
   // ---- License / activation ----
   handle('license:status', () => license.status())
@@ -44,6 +55,19 @@ export function registerIpc(ctx: IpcContext): void {
   handle('settings:set', (a) => {
     if (!isPublicSettingKey(a.key)) throw new Error(`not a writable setting: ${a.key}`)
     repos.settings.set(a.key, a.value)
+  })
+
+  // ---- Native media file picker ----
+  handle('dialog:pickMedia', async () => {
+    const result = await dialog.showOpenDialog({
+      properties: ['openFile'],
+      filters: [
+        { name: 'Media', extensions: ['jpg', 'jpeg', 'png', 'gif', 'webp', 'mp4', 'pdf', 'ogg', 'mp3', 'doc', 'docx'] }
+      ]
+    })
+    if (result.canceled || result.filePaths.length === 0) return { path: null, mediaType: null }
+    const path = result.filePaths[0]
+    return { path, mediaType: inferMediaType(path) }
   })
 
   // ---- Accounts ----
@@ -104,12 +128,18 @@ export function registerIpc(ctx: IpcContext): void {
 
   // ---- Campaigns ----
   handle('campaigns:list', () => repos.campaigns.list())
-  handle('campaigns:create', (a) => campaigns.create(a))
+  handle('campaigns:create', (a) => {
+    const campaign = campaigns.create(a)
+    scheduler.syncRecurring()
+    return campaign
+  })
   handle('campaigns:pause', (a) => {
     campaigns.pause(a.campaignId)
+    scheduler.syncRecurring()
   })
   handle('campaigns:resume', (a) => {
     campaigns.resume(a.campaignId)
+    scheduler.syncRecurring()
   })
   handle('campaigns:progress', (a) => repos.campaigns.progress(a.campaignId))
 

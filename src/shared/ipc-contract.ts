@@ -25,6 +25,9 @@ export interface IpcRequests {
   'settings:get': { req: void; res: Record<string, string> }
   'settings:set': { req: { key: string; value: string }; res: void }
 
+  // Native file picker (for template media)
+  'dialog:pickMedia': { req: void; res: { path: string | null; mediaType: string | null } }
+
   // Accounts
   'accounts:list': { req: void; res: Account[] }
   'accounts:create': {
@@ -104,6 +107,7 @@ export const IPC_CHANNELS: IpcChannel[] = [
   'license:activate',
   'settings:get',
   'settings:set',
+  'dialog:pickMedia',
   'accounts:list',
   'accounts:create',
   'accounts:connect',

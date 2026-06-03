@@ -6,9 +6,11 @@
 import cron, { type ScheduledTask } from 'node-cron'
 import type { Repositories } from '../db/repositories'
 import type { Supervisor } from '../accounts/supervisor'
+import type { CampaignService } from './campaign-service'
 import { evaluateSendGate } from '@shared/logic/rate-limiter'
 import { renderTemplate } from '@shared/logic/template'
 import type { OutgoingContent } from '@shared/events'
+import type { Campaign } from '@shared/models'
 
 const TICK_CRON = '*/20 * * * * *' // every 20 seconds
 const BATCH_PER_ACCOUNT = 5
@@ -17,11 +19,13 @@ const LEASE_MS = 5 * 60_000
 export class Scheduler {
   private task: ScheduledTask | null = null
   private warmupTask: ScheduledTask | null = null
+  private recurring = new Map<number, ScheduledTask>()
   private ticking = false
 
   constructor(
     private repos: Repositories,
-    private supervisor: Supervisor
+    private supervisor: Supervisor,
+    private campaignService: CampaignService
   ) {}
 
   start(): void {
@@ -34,13 +38,42 @@ export class Scheduler {
     this.warmupTask = cron.schedule('0 3 * * *', () => {
       this.repos.accounts.advanceWarmupForLinked()
     })
+    this.syncRecurring()
   }
 
   stop(): void {
     this.task?.stop()
     this.warmupTask?.stop()
+    for (const t of this.recurring.values()) t.stop()
+    this.recurring.clear()
     this.task = null
     this.warmupTask = null
+  }
+
+  /** Register/unregister cron jobs for recurring campaigns based on their current status. */
+  syncRecurring(): void {
+    const running = new Set<number>()
+    for (const c of this.repos.campaigns.list()) {
+      if (c.recurrence && c.status === 'running') {
+        running.add(c.id)
+        if (!this.recurring.has(c.id)) this.registerRecurring(c)
+      }
+    }
+    for (const [id, task] of this.recurring) {
+      if (!running.has(id)) {
+        task.stop()
+        this.recurring.delete(id)
+      }
+    }
+  }
+
+  private registerRecurring(campaign: Campaign): void {
+    if (!campaign.recurrence || !cron.validate(campaign.recurrence)) return
+    const task = cron.schedule(campaign.recurrence, () => {
+      // Each fire enqueues a fresh batch for the campaign's list.
+      this.campaignService.materialize(campaign.id, Date.now())
+    })
+    this.recurring.set(campaign.id, task)
   }
 
   private quietHours(): { startHour: number; endHour: number } {
