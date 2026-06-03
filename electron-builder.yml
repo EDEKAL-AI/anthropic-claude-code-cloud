@@ -1,5 +1,6 @@
 appId: com.edekal.whatsapp-marketing
 productName: WhatsApp Marketing
+copyright: Copyright © EDEKAL-AI
 directories:
   output: release
   buildResources: resources
@@ -11,21 +12,32 @@ files:
 asarUnpack:
   - "**/node_modules/better-sqlite3/**"
   - "out/main/worker.js"
+# electron-builder derives platform icon formats from resources/icon.png (1024x1024).
+# Regenerate it with: node tools/make-icon.mjs
 win:
   target:
     - nsis
+  icon: resources/icon.png
   artifactName: ${productName}-${version}-setup.${ext}
 nsis:
   oneClick: false
   allowToChangeInstallationDirectory: true
+  perMachine: false
 mac:
   target:
     - dmg
   category: public.app-category.business
+  icon: resources/icon.png
   hardenedRuntime: true
-  # gatekeeperAssess: false and notarization are configured via env/afterSign in CI.
+  # Notarization runs via @electron/notarize in an afterSign hook (see CI env below).
 linux:
   target:
     - AppImage
     - deb
+  icon: resources/icon.png
   category: Office
+# Auto-update feed. Replace `url` with where you host release artifacts + latest.yml.
+# (GitHub Releases: replace this block with `provider: github` + owner/repo.)
+publish:
+  provider: generic
+  url: https://updates.example.com/whatsapp-marketing

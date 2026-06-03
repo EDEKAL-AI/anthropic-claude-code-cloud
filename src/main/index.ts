@@ -1,4 +1,5 @@
 import { app, BrowserWindow, session } from 'electron'
+import electronUpdater from 'electron-updater'
 import { fileURLToPath } from 'node:url'
 import { dirname, join } from 'node:path'
 import { getDb } from './db/connection'
@@ -82,10 +83,22 @@ function bootstrap(): void {
   scheduler.start()
 }
 
+function checkForUpdates(): void {
+  // Only in packaged builds; needs a `publish` provider in electron-builder.yml. Never
+  // let an update check failure (e.g. offline) crash startup.
+  if (!app.isPackaged) return
+  try {
+    void electronUpdater.autoUpdater.checkForUpdatesAndNotify()
+  } catch {
+    /* ignore */
+  }
+}
+
 app.whenReady().then(() => {
   applyCsp()
   bootstrap()
   createWindow()
+  checkForUpdates()
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow()

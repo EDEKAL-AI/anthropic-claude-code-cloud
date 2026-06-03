@@ -84,6 +84,14 @@ The Baileys worker is emitted to `out/main/worker.js` and kept **outside** the a
 archive (`asarUnpack`) so `utilityProcess.fork()` can resolve a real path. Verify
 `utilityProcess` works in a *packaged* build, not just `pnpm dev`.
 
+- **App icon**: `resources/icon.png` (1024×1024). Regenerate with `node tools/make-icon.mjs`;
+  electron-builder derives `.ico`/`.icns` from it.
+- **Auto-update**: `electron-updater` checks on launch in packaged builds. Set the feed in
+  `electron-builder.yml` under `publish` (generic URL or `provider: github`). The app writes
+  `app-update.yml` into the package automatically.
+- **Code signing**: set Apple Developer ID + notarization (`APPLE_ID`, `APPLE_APP_SPECIFIC_PASSWORD`,
+  `APPLE_TEAM_ID`) and Windows Authenticode credentials in your CI environment.
+
 ## Licensing
 
 The app is gated by an offline license key (Ed25519-signed, verified against an embedded
@@ -120,8 +128,9 @@ phone alternative.
 - [x] M5 Auto-reply engine (keyword rules + cooldown + opt-out)
 - [x] M6 Multi-account supervisor + circuit-breaker restarts
 - [x] M7 Emulator/ADB primary-device module (attach to existing) + physical-phone option
-- [ ] M8 Packaging hardening (code signing / notarization / auto-update) — config in place,
-      signing requires real credentials
+- [x] M8 Packaging: app icon, asarUnpack worker + native module, auto-update feed,
+      validated via `electron-builder --linux dir`. Code signing / notarization need real
+      Apple/Windows credentials (CI env), and the auto-update `url` must point at your host.
 
 Live WhatsApp pairing/sending is verified manually (see the runbook); automated tests
 cover the pure logic and the SQLite data layer.
