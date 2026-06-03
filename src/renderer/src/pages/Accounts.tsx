@@ -31,15 +31,9 @@ export function AccountsPage() {
   }
 
   async function connect(a: Account): Promise<void> {
+    // The worker auto-emits a pairing code (code method) or QR (qr method) over the event
+    // stream once the socket reaches the connecting state; no explicit request needed here.
     await api.accounts.connect(a.id)
-    if (a.pairingMethod === 'code') {
-      // pairing code arrives via the worker event stream once the socket is connecting
-      try {
-        await api.accounts.requestPairingCode(a.id)
-      } catch {
-        /* the event stream will deliver it shortly */
-      }
-    }
     await refreshAccounts()
   }
 
